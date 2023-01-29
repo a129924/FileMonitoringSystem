@@ -6,10 +6,15 @@ import os, time
 from ExcelDataParser import ExcelDataParser
 from FileManager import FileMoveManager
 from ZipUtility import ZipExtrator
+from threading import Thread
+import queue
+
 
 setter = ExcelDataParser(
     r"D:\code\python\FileMonitoringSystem\Setting\ProjectSettingInfo.xlsx", "ProjectSettingInfo")
 SETTING_DATA = setter.reset_index(setter.dataframe, "目的路徑")
+
+MOVE_FILE_QUEUE = queue.Queue()
 
 class FileEventHandler(FileSystemEventHandler):
     def __init__(self, dirs):
@@ -50,6 +55,19 @@ class FileEventHandler(FileSystemEventHandler):
         for file in files:
             self.delete_src_file(os.path.join(path, file))
 
+    @staticmethod
+    def move_file(src_path: str, dst_path: str):
+        # move_file()
+        FileMoveManager(dst_path).move_file(fr"{src_path}",)
+        print("移動完畢")
+        
+    @staticmethod
+    def unzip(dst_path: str, filename: str, password="", create_folder_by_extension:bool=False):
+        ZipExtrator(
+            zip_file=os.path.join(dst_path, "DATA", filename),
+            password=password,
+            to_path=os.path.join(dst_path, "DATA")).unzip(create_folder_by_extension)
+    
     def on_moved(self, event):
         # TODO: 先從這邊下手
         if event.is_directory:
@@ -74,8 +92,7 @@ class FileEventHandler(FileSystemEventHandler):
             print("file created:{0}".format(event.src_path))
             self.create_new_file(event.src_path)
             
-            working_path = os.path.dirname(event.src_path)
-            print(self.src_files)
+            working_path:str = os.path.dirname(event.src_path) # 將路徑(含檔案)只取路徑
             self.print_info("created", event.src_path)
             
             if working_path in SETTING_DATA.keys():
@@ -83,37 +100,18 @@ class FileEventHandler(FileSystemEventHandler):
                 regex_strings = setting_data["正式檔下載檔名"] if isinstance(setting_data["正式檔下載檔名"], list) else [setting_data["正式檔下載檔名"]]
                 filename = os.path.basename(event.src_path)
                 if self.is_match_regex_file(filename, regex_strings):
-                    # move_file()
-                    dst_path = setting_data["作業目錄"]
-                    while True:
-                        time.sleep(0.5)
-                        try:
-                            FileMoveManager(dst_path).move_file(fr"{event.src_path}",)
-                            break
-                        except Exception as e:
-                            if "[Errno 13]" in str(e):
-                                pass
-                    
-                    print("移動完畢")
-                    
-                    # unzip()
-                    if event.src_path.endswith(".zip"):
-                        ZipExtrator(
-                            zip_file=os.path.join(dst_path, "DATA", filename),
-                            password = "1234", 
-                            to_path= os.path.join(dst_path, "DATA")).unzip(True)
-                        
+                    MOVE_FILE_QUEUE.put(event.src_path)
+        #             dst_path = setting_data["作業目錄"]
+        #             # move_file()
+        #             self.move_file(event.src_path, dst_path)
+        #             # unzip()
+        #             if event.src_path.endswith(".zip"):
+        #                 self.unzip(dst_path, filename, "1234", True)   
                 else:
                     print(f"match field file: {os.path.basename(event.src_path)}")
-                    
-                    
-            
-            
-            
-
-        
+   
         # print(f"file created size: {os.path.getsize(event.src_path)}") # TODO: 把檔案大小塞進self.src_files[event.src_path] = os.path.getsize(event.src_path)
-
+    
     def on_deleted(self, event):
         if event.is_directory:
             print("directory 'deleted':{0}".format(event.src_path))
@@ -122,7 +120,7 @@ class FileEventHandler(FileSystemEventHandler):
         else:
             print("file 'deleted':{0}".format(event.src_path))
             self.delete_src_file(event.src_path)
-
+            
         print(self.src_files)
         print("#############################")
 
@@ -133,7 +131,7 @@ class FileEventHandler(FileSystemEventHandler):
     #         print("file 'modified':{0}".format(event.src_path))
 
     #         self.now_file_size(event.src_path)
-    #         print(self.src_files)
+    #         
 
     #     self.print_info("modified", event.src_path)
         
@@ -158,11 +156,33 @@ class FileEventHandler(FileSystemEventHandler):
                 except KeyboardInterrupt:
                     observer.stop()
 
-                observer.join()
+                # observer.join()
                 print(input("input any..."))
 
+def print_thread_id():
+    print('thread id:', threading.get_ident())
+    time.sleep(10)
+    print("done")
+
+def do_something():
+    i = 0
+    while True:
+        move_file = []
+        if MOVE_FILE_QUEUE.empty():
+            pass
+        else:
+            move_file:list = MOVE_FILE_QUEUE.get()
+            children_thread = Thread(target=print_thread_id, args=())
+            children_thread.start()
+
+        print(f'{i} thread id: {threading.get_ident()} move_file: {move_file}')
+
+        time.sleep(1)
+        i += 1
 
 if __name__ == "__main__":
+    consumer = Thread(target=do_something, args=())
+    consumer.start()
     observer = Observer()
     dirs = [r"D:\TEST\UserProfile", r"D:\TEST\UserProfile\Auto\ProjectFolder"]
     # dirs = ["/home/andrew/TEST/UserProfile/",
