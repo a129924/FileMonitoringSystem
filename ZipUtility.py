@@ -2,6 +2,7 @@ import zipfile
 import os
 from typing import overload
 import threading
+from pathlib import Path
 
 
 class DriverException(Exception):
@@ -31,7 +32,10 @@ class ZipUtility:
     @staticmethod
     def is_all_defined(files: list) -> bool:
         return set(os.listdir()) & set(files) == set(files)
-
+    
+    @staticmethod
+    def is_zipfile(zip_file_path:str)->bool:
+        return zipfile.is_zipfile(zip_file_path)
 
 class ZipExtrator(ZipUtility):
     """
@@ -44,19 +48,38 @@ class ZipExtrator(ZipUtility):
         """
         create_folder_by_extension若為True則會在to_path底下創建該檔案副檔名的資料夾 並將檔案放置在這底下 若為False會直接依照to_path放置在該路徑
         """
-        with zipfile.ZipFile(self.zip_file, "r", zipfile.ZIP_DEFLATED) as zip_reader:
+        with zipfile.ZipFile(self.zip_file, "r", zipfile.ZIP_DEFLATED,) as zip_reader:
+            print(self.to_path)
             if create_folder_by_extension:
+                
                 print(f"thread id:{threading.get_ident()}")
-                for file in zip_reader.namelist():
-                    file_extension: str = os.path.splitext(file)[1][1:].upper()
-                    file_extension = file_extension if file_extension != "TXT" else "TST"
-                   
-                    zip_reader.extract(file,
-                                       path=fr".\{os.path.join(self.to_path, file_extension)}",
-                                       pwd=self.password.encode("ascii") if self.password != b"" else None)
+                for file in zip_reader.infolist():
+                    file_extension: str = os.path.splitext(file.filename)[1][1:].upper()
+                    decode_file = file.filename.encode("cp437").decode("BIG5") # V
+                    # file.filename = decode_file
+                    file.filename = os.path.basename(decode_file) # 覆蓋原始檔案名稱
+                    if file_extension == "TXT":
+                        file_extension = "TST"
+                    elif file_extension == "":
+                        continue
+                    path = fr".\{os.path.join(self.to_path, file_extension)}"
+                    print(f"(file, path, file.orig_filename) : {(file.filename, path, file.orig_filename)}")
+                    # extrated_path = Path(
+                    #     zip_reader.extract(file,
+                    #     path=fr".\{os.path.join(self.to_path, file_extension)}",
+                    #     pwd=self.password.encode("ascii") if self.password != b"" else None))
+                    # extrated_path.rename(file.encode("cp437").decode("UTF8"))
+                    zip_reader.extract(
+                        file,
+                        path=fr".\{os.path.join(self.to_path, file_extension)}",
+                        pwd=self.password.encode("ascii") if self.password != b"" else None
+                        )
+
             else:
-                zip_reader.extractall(path=self.to_path, pwd=self.password.encode(
-                    "ascii") if self.password.encode("ascii") != b"" else None)
+                zip_reader.extractall(
+                    path=self.to_path, 
+                    pwd=self.password.encode("ascii") if self.password.encode("ascii") != b"" else None
+                    )
 
 
 class ZipCreator(ZipUtility):

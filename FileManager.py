@@ -1,3 +1,4 @@
+from fileinput import filename
 import os
 import shutil
 import threading
@@ -36,7 +37,10 @@ class FileMoveManager(FileManager):
         assert os.path.exists(dst_path), "Folder '%s' not exists" % dst_path
         self.dst_path = dst_path
         
-    def move_file(self, src_file_path:str, easy_move:bool = False):
+    def move_file(self, src_file_path:str, easy_move:bool = False)->tuple:
+        """
+        return if True return (True, 輸出完整路徑)
+        """
         assert os.path.exists(src_file_path), "File '%s' not exists" % src_file_path
         print('thread id:', threading.get_ident())
         
@@ -60,6 +64,7 @@ class FileMoveManager(FileManager):
                 break
             except PermissionError as e:
                 pass
+        return (True, dst_path)
 
     def move_files(self, files: list, src_path: str):
         # to_path .\Project\childProject\{today}

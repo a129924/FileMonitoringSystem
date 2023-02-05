@@ -2,6 +2,7 @@ import re
 from datetime import datetime
 
 import time
+# TODO 正則要改成符合符號 ["&", "!", "#", "%", "^", "-", "=",]
 
 class CheckCommaList(list):
     def __init__(self,iterator:list):
@@ -14,6 +15,10 @@ class CheckCommaList(list):
     def is_have_comma_string(string:str)->bool:return "," in string
     
     def main(self,string:str):
+        '''
+        強制把含有逗號的字串 轉換成list 
+        並把LIST中每個字串 轉換成ComplexString型態 
+        '''
         if self.is_have_comma_string(string):
             strings = self.have_comma_string_to_list(string)
 
@@ -32,8 +37,11 @@ class ComplexString(str):
         
     @property
     def regex_convert(self)->dict:
+        # return {
+        #     "*": '[.\\w\\d\\S]+\\',
+        # }        
         return {
-            "*": '[\\w\\d]+\\',
+            "*": '.*\\',
         }
     
     # 主要字串輸出    
@@ -73,7 +81,8 @@ if __name__ == "__main__":
     # contension_string = "FuturesDay_2*.zip"
     contension_string = "IAN1<MMDD>*.zip"
     contension_strings:list = ["FuturesDay_2*.zip",
-                        "FuturesDay_3*.zip", "FuturesDay_3*asd.msg", "FuturesDay_4*<MMDD>ABCDE.zip", "IAN1<MMDD>*.zip", "IANA<MMDD>*.zip,IANA<MMDD>*.msg"]
+                        "FuturesDay_3*.zip", "FuturesDay_3*asd.msg", "FuturesDay_4*<MMDD>ABCDE.zip", "IAN1<MMDD>*.zip", "IANA<MMDD>*.zip,IANA<MMDD>*.msg"
+                        ,"IAN1<MMDD>*.zip"]
     def now():return time.time()
     start = now()
     new_strings: list = CheckCommaList(contension_strings)

@@ -52,22 +52,24 @@ class ExcelDataParser():
 
 if "__main__" == __name__:
     data = ExcelDataParser(
-        r"D:\code\python\FileMonitoringSystem\Setting\ProjectSettingInfo.xlsx", "ProjectSettingInfo")
+        r"D:\CODE\NEW\FileMonitoringSystem-main\Setting\ProjectSettingInfo.xlsx", "ProjectSettingInfo")
     # print(data.header)
     # print(data.body)
     # print(data.dataframe)
-    import re
-    new_data = data.reset_index(data.dataframe, "目的路徑")
-    files = ["123.zip", "ABC.msg", "ABCD.bat", "1234.zip"]
-    contensions = new_data["E:\MAIL\Andrew\Auto\安聯人壽－每日補單"]["正式檔下載檔名"]
-    def is_match_regex_file(file: str, regex_strings: list) -> bool:
-        import re
-        for regex in regex_strings:
-            if re.match(fr"{regex}", file):
-                return True
-        return False
+    print(list(data.reset_index(data.dataframe, "目的路徑").keys()))
+    # import re
+    # new_data = data.reset_index(data.dataframe, "目的路徑")
+    # files = ["123.zip", "ABC.msg", "ABCD.bat", "1234.zip"]
+    # contensions = new_data["E:\MAIL\Andrew\Auto\安聯人壽－每日補單"]["正式檔下載檔名"]
+    # def is_match_regex_file(file: str, regex_strings: list) -> bool:
+    #     import re
+    #     for regex in regex_strings:
+    #         if re.match(fr"{regex}", file):
+    #             return True
+    #     return False
     
-    print(is_match_regex_file(files[0], contensions))
+    # print(is_match_regex_file(files[0], contensions))
+    # print(new_data)
     # # 利用正則表達式篩選出符合的檔案(字串)
     # contensions = new_data["E:\MAIL\Andrew\Auto\安聯人壽－每日補單"]["正式檔下載檔名"]
     # matching_files = []
