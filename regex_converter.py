@@ -27,7 +27,7 @@ class CheckCommaList(list):
         else:
             return ComplexString(string)
 
-class ComplexString():
+class ComplexString(str):
     def __init__(self, string:str):
         self.string = string
         
