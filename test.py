@@ -1,23 +1,35 @@
-# import time
+'''
+1. 假設folder進來
 
-# now = lambda :time.time()
+'''
 
-# start = now()
-# src_path = r".\Auto\ProjectFoldddder1\folder\XXX.YYY"
-# check_filepaths:list = [r".\Auto\ProjectFolder1", r".\Auto\ProjectFolder2", r".\Auto\ProjectFolder3"] * 1000
-# create_same_len_src_paths = [src_path] * len(check_filepaths) * 1000
+def to_same_path(path):
+    import os
+    return os.path.abspath(path)
 
-# def is_in_more_folder_need_move_file(src_path:str, check_filepath:str)->bool:
-#     '''
-#     src_filepath: 
-#     '''
-#     return check_filepath in src_path
-# # map(function , function_arg1, function_arg2, ...)
-# print(any(map(is_in_more_folder_need_move_file, create_same_len_src_paths, check_filepaths)))
 
-# print(f"{(now() - start) * 1000}")
+monitoring_paths: list = ["D:\\ABC\\123", "D:\\ABC\\456", "D:\\ABC\\789"]
+insert_fullpaths: list = ["D:\\ABC\\123\\123.txt", "D:\\ABC\\123\\456\\789.zip"]
 
-for i in range(1,10):
-    if i == 2:
-        continue
-    print(i)
+monitoring_paths = list(map(to_same_path, monitoring_paths))
+insert_fullpaths = list(map(to_same_path, insert_fullpaths))
+
+for insert_path in insert_fullpaths:
+    print(insert_path)
+    
+for monitor_path in monitoring_paths:
+    print(monitor_path)
+    
+print("######################")
+    
+for insert_fullpath in insert_fullpaths:
+    # print(insert_fullpath)
+    for monitoring_path in monitoring_paths:
+        # print(monitoring_path)
+        if monitoring_path not in insert_fullpath:
+            print(f"{monitoring_path} to {insert_fullpath} is not match")
+        else:
+            # do_something
+            print(f"{monitoring_path} to {insert_fullpath} is match")
+            
+        

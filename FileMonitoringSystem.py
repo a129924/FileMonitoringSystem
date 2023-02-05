@@ -24,7 +24,10 @@ class FileEventHandler(FileSystemEventHandler):
 
         self.src_files: dict = {}
         self.count = 0
-        
+    
+    @property
+    def SETTING_DATA_HEADER(self):
+        return list(SETTING_DATA.keys())
     @property
     def working_directories(self)->list:
         return list(map(os.path.dirname, self.src_files.keys()))
@@ -34,6 +37,13 @@ class FileEventHandler(FileSystemEventHandler):
         import re
         for regex in regex_strings:
             if re.match(fr"{regex}", file):
+                return True
+        return False
+    
+    @staticmethod
+    def is_in_monitored_directory(dir_path:str, monitored_directorys:list)->bool:
+        for folder in monitored_directorys:
+            if folder in dir_path:
                 return True
         return False
     
@@ -99,7 +109,7 @@ class FileEventHandler(FileSystemEventHandler):
                 # print(f"now working path: {working_path} if inside: {working_path in SETTING_DATA.keys()}")
                 self.print_info("created", event.src_path)
                 
-                if working_path in SETTING_DATA.keys():
+                if working_path in SETTING_DATA.keys() or self.is_in_monitored_directory(event.src_path, self.SETTING_DATA_HEADER):
                     setting_data = SETTING_DATA[working_path]
                     regex_strings = setting_data["正式檔下載檔名"] if isinstance(setting_data["正式檔下載檔名"], list) else [setting_data["正式檔下載檔名"]]
                     filename = os.path.basename(event.src_path)
