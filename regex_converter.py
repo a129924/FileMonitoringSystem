@@ -1,4 +1,5 @@
 import re
+import os 
 from datetime import datetime
 
 import time
@@ -26,7 +27,7 @@ class CheckCommaList(list):
         else:
             return ComplexString(string)
 
-class ComplexString(str):
+class ComplexString():
     def __init__(self, string:str):
         self.string = string
         
@@ -88,4 +89,5 @@ if __name__ == "__main__":
     new_strings: list = CheckCommaList(contension_strings)
     print((now() - start)*1000)
     print(new_strings)
+    print(list(map(os.path.abspath, new_strings)))
 
