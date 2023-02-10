@@ -1,8 +1,9 @@
-from fileinput import filename
 import os
 import shutil
 import threading
 import time
+
+from typing import Tuple
 
 class FileManager():
     """
@@ -64,6 +65,21 @@ class FileMoveManager(FileManager):
                 break
             except PermissionError as e:
                 pass
+        return (True, dst_path)
+
+    def copy_file(self, src_path:str, rename:bool= False, new_filename = "")->Tuple[bool, str]:
+        filename = os.path.basename(src_path)
+        if rename:
+            dst_path = os.path.join(self.dst_path, new_filename)
+            print(("dst_path, new_filename: " ,(dst_path, new_filename)))
+        else:
+            dst_path = os.path.join(self.dst_path, filename)
+            print(("dst_path, new_filename: " ,(dst_path, filename)))
+
+
+        if not os.path.exists(dst_path):
+            shutil.copy2(src_path, dst_path)
+
         return (True, dst_path)
 
     def move_files(self, files: list, src_path: str):

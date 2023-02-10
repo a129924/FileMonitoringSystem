@@ -1,0 +1,30 @@
+{
+    "ProjectName": "IAN1", 
+    "ZipPassword": 89283591,
+    "EasyMove": false,
+    "CreateFolderByExtension": true,
+    "MoveSameFileByFolder": {
+        "isMove": true,
+        "fileExtension": "TXT"
+    },
+    "VbaMainFileInfo": {
+        "checkName": {
+            "type": false,
+            "target": ""
+        },
+        "filePath": "E:\\DATA\\IAN\\IAN1\\back\\main_每日.xlsm",
+        "toPath": "E:\\DATA\\IAN\\IAN1\\<MMDD>"
+    },
+    "ZipFile":{
+        "zipFileName": "<MMDD>IAN1TST每日(安聯人壽-收費科).zip",
+        "password": "<user_cellnumber>",
+        "files":[
+            "<MMDD>IAN1-P*_TST.PDF",
+            "ian_難字清冊.pdf",
+            "掛號回檔<MMDD>.xls",
+            "掛號回檔<MMDD>_*.txt"
+        ],
+        "okAmount":4,
+        "toPath": "E:\\DATA\\IAN\\IAN1\\<MMDD>"
+    }
+}

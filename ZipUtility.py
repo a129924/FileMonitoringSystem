@@ -1,8 +1,10 @@
+from asyncio import subprocess
+from fileinput import filename
 import zipfile
 import os
-from typing import overload
+from typing import overload ,Tuple
 import threading
-from pathlib import Path
+
 
 
 class DriverException(Exception):
@@ -29,9 +31,7 @@ class ZipUtility:
         self.password = password
         self.to_path = to_path
 
-    @staticmethod
-    def is_all_defined(files: list) -> bool:
-        return set(os.listdir()) & set(files) == set(files)
+
     
     @staticmethod
     def is_zipfile(zip_file_path:str)->bool:
@@ -44,31 +44,46 @@ class ZipExtrator(ZipUtility):
     2. 可選擇解壓縮檔案存放路徑
     """
 
-    def unzip(self, create_folder_by_extension: bool = False) -> None:
+    @staticmethod
+    def get_unzip_file_folder(filename:str, is_move:bool, is_move_file_extension:str)->Tuple[str,str]:
+            decode_file = filename.encode("cp437").decode("BIG5") # V
+            foldername = os.path.dirname(filename)
+            # file.filename = decode_file
+            filename = os.path.basename(decode_file) # 覆蓋原始檔案名稱
+            file_extension: str = os.path.splitext(filename)[1][1:].upper()
+            if is_move:
+                if file_extension == is_move_file_extension.upper() and foldername == os.path.splitext(filename)[0]:
+                    return (filename, "")
+                elif file_extension == "TXT":
+                    return (filename, "TST")
+
+            elif file_extension == "TXT":
+                return (filename, "TST")
+
+            return (filename, file_extension)
+
+    def unzip(self, create_folder_by_extension: bool, move_same_filename_by_folder:dict) -> None:
         """
         create_folder_by_extension若為True則會在to_path底下創建該檔案副檔名的資料夾 並將檔案放置在這底下 若為False會直接依照to_path放置在該路徑
+        move_same_filename_by_folder
         """
         with zipfile.ZipFile(self.zip_file, "r", zipfile.ZIP_DEFLATED,) as zip_reader:
-            print(self.to_path)
+            same_is_move:bool = move_same_filename_by_folder.get("isMove") # type: ignore
+            same_file_extension:str = move_same_filename_by_folder.get("fileExtension")  # type: ignore
+            
+
             if create_folder_by_extension:
                 
                 print(f"thread id:{threading.get_ident()}")
                 for file in zip_reader.infolist():
-                    file_extension: str = os.path.splitext(file.filename)[1][1:].upper()
-                    decode_file = file.filename.encode("cp437").decode("BIG5") # V
-                    # file.filename = decode_file
-                    file.filename = os.path.basename(decode_file) # 覆蓋原始檔案名稱
-                    if file_extension == "TXT":
-                        file_extension = "TST"
-                    elif file_extension == "":
+                    if os.path.splitext(file.filename)[1] == "":
                         continue
+                    file.filename, file_extension = self.get_unzip_file_folder(file.filename, is_move=same_is_move, is_move_file_extension=same_file_extension) 
+
                     path = fr".\{os.path.join(self.to_path, file_extension)}"
+                    # (file, path, file.orig_filename) : ('REMINDER_T11200001078.pdf', '.\\E:\\DATA\\IAN\\IAN1\\0207TST\\data\\PDF', 'REMINDER_20230204/REMINDER_T11200001078.pdf')
                     print(f"(file, path, file.orig_filename) : {(file.filename, path, file.orig_filename)}")
-                    # extrated_path = Path(
-                    #     zip_reader.extract(file,
-                    #     path=fr".\{os.path.join(self.to_path, file_extension)}",
-                    #     pwd=self.password.encode("ascii") if self.password != b"" else None))
-                    # extrated_path.rename(file.encode("cp437").decode("UTF8"))
+
                     zip_reader.extract(
                         file,
                         path=fr".\{os.path.join(self.to_path, file_extension)}",
@@ -76,29 +91,42 @@ class ZipExtrator(ZipUtility):
                         )
 
             else:
-                zip_reader.extractall(
-                    path=self.to_path, 
-                    pwd=self.password.encode("ascii") if self.password.encode("ascii") != b"" else None
-                    )
+                try:
+                    zip_reader.extractall(
+                        path=self.to_path, 
+                        pwd=self.password.encode("ascii") if self.password.encode("ascii") != b"" else None
+                        )
 
+                except NotImplementedError:
+                    import subprocess
+                    command = [r"D:\CODE\NEW\FileMonitoringSystem-main\EXE\7z.exe",
+                    "x", self.zip_file, f"-o{os.path.dirname(self.zip_file)}",
+                    f"-p{self.password}"]
 
-class ZipCreator(ZipUtility):
+                    subprocess.run(command)     
+
+class ZipCreator():
     """
     # 建立壓縮檔
     1. 支援加密壓縮 
     2. 支援多個檔案、資料夾，單個檔案、資料夾壓縮成壓縮檔
     """
 
-    def __init__(self, zip_file: str, password: str = "", to_path: str = "./", zip_filename: str = os.path.basename(os.getcwd()), zip_driver: str = "./7z.exe") -> None:
+    def __init__(self,zip_filename: str,  password: str, to_path: str , zip_driver: str = ".\\EXE\\7z.exe") -> None:
         if os.path.isfile(zip_driver) is False:
             raise DriverException("Zip driver not found")
 
-        super().__init__(zip_file, password, to_path)
         self.zip_filename = zip_filename
+        self.password = password
+        self.to_path = to_path
         self.zip_driver = zip_driver
+    
+    @staticmethod
+    def is_all_defined(src_path, files: list) -> bool:
+        return set(os.listdir(src_path)) & set(files) == set(files)
 
     def compress_files(self, src_path: str, files: list) -> bool:
-        if self.is_all_defined(files) is False:
+        if self.is_all_defined(src_path, files) is False:
             raise FileNotDefinedException("File not defined")
 
         import subprocess
@@ -106,14 +134,16 @@ class ZipCreator(ZipUtility):
         command = [self.zip_driver, 'a', f'-p{self.password}', f"{self.zip_filename}"] + [
             os.path.join(src_path, file) for file in files]
         result = subprocess.run(command)
+        
         return result.returncode == 0
 
 
 if __name__ == "__main__":
     # # 解壓縮檔案
-    zip_file = ZipExtrator("aio1.zip", password="1234", to_path="./data")  # V
-    print(zip_file.unzip(True))
+    # zip_file = ZipExtrator("aio1.zip", password="1234", to_path="./data")  # V
+    # print(zip_file.unzip(True))
 
     # 檔案壓縮成壓縮檔
-    # create_zip = ZipCreator(zip_file = "123", password = "8482", zip_filename = "aio加密8482.zip") # V
-    # create_zip.compress_files(src_path="./", files= ["123.txt","1234.txt"])
+
+    create_zip = ZipCreator(zip_filename = "aio加密8482.zip", password = "8482", to_path=".\\EXE") # V
+    create_zip.compress_files(src_path=".\\", files= ["ABC.md","ABC.pdf"])

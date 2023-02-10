@@ -1,0 +1,44 @@
+{
+    "ProjectName": "IANH",
+    "ZipPassword": 89283591,
+    "EasyMove": false,
+    "CreateFolderByExtension": false,
+    "MoveSameFileByFolder": {
+        "isMove": false,
+        "fileExtension": ""
+    },
+    "VbaMainFileInfo": {
+        "checkName": {
+            "type": true,
+            "target": "<MMDD>"
+        },
+        "filePath": "E:\\DATA\\IAN\\IANH\\back\\安聯人壽已繳通知單Main-v1.7-XXXX.xlsm",
+        "toPath": "E:\\DATA\\IAN\\IANH"
+    },
+    "ZipFile": {
+        "zipFileName": "<MMDD>IANHTST(安聯人壽-收費科)已繳費通知單.zip",
+        "password": "<user_cellnumber>",
+        "files": [
+            "<MMDD>IANHTEST.pdf",
+            "ianh_難字清冊.pdf",
+            "安聯人壽已繳通知單-確認單.pdf"
+        ],
+        "okAmount": 5,
+        "toPath": "E:\\DATA\\IAN\\IANH\\<MMDD>\\批次檔\\OK"
+    },
+    "MsgFile": {
+        "isParser": true,
+        "extract": [
+            "body"
+        ],
+        "toPath": "E:\\DATA\\IAN\\IANH\\<MMDD>TST"
+    },
+    "UploadFiles": {
+        "Files": [
+            "File1",
+            "File2",
+            "File3"
+        ],
+        "toPath": ""
+    }
+}
