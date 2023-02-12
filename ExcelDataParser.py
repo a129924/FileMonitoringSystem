@@ -2,12 +2,14 @@ import os
 from openpyxl import load_workbook, Workbook
 
 from regex_converter import CheckCommaList
+from typing import List, Any
 
 class ExcelDataParser():
-    def __init__(self,file_path:str, sheet_name:str) -> None:
+    def __init__(self, file_path: str, sheet_name: str, is_convert = True) -> None:
         assert os.path.splitext(file_path)[1] in [".xls", ".xlsx", ".csv"], "檔案副檔名錯誤" 
         self.file_path = file_path
         self.sheet_name = sheet_name
+        self.is_convert = is_convert
 
     @property
     def wb(self)->Workbook:
@@ -20,10 +22,12 @@ class ExcelDataParser():
     @property
     def data(self)->list:
         data = []
-
-        for rows in self.wb[self.sheet_name]:
-            data.append(CheckCommaList([row.value for row in rows]))
-
+        if self.is_convert:
+            for rows in self.wb[self.sheet_name]:
+                data.append(CheckCommaList([row.value for row in rows]))
+        else:
+            for rows in self.wb[self.sheet_name]:
+                data.append([row.value for row in rows])
         return data
 
     @property
@@ -48,34 +52,41 @@ class ExcelDataParser():
             reset_index_data[new_index] = row
 
         return reset_index_data
+    
+    def fillna(self, index, method):
+        
+        if method == "first":
+            data = self.data
+        elif method == "last":
+            data = self.data[::-1]
+        else:
+            raise ValueError("Invalid method")
+        
+        fillna_value = data[0][index]
+        
+        for row in data[1:]:
+            if row[index] != None:
+                fillna_value = row[index]
+                continue
+            
+            row[index] = fillna_value
 
+        return data
+    
+    def groupby(self, index:int, data:List[List[str]])->dict:
+        groupby_data = {}
+        for row in data:
+            if row[index] not in groupby_data:
+                groupby_data[row[index]] = row[:index] + row[index+1:]
+            else:
+                # groupby_data[row[index]] = groupby_data[row[index]] + row[:index] + row[index+1:]
+                groupby_data[row[index]] += row[:index] + row[index+1:]
 
+        return groupby_data
+    
 if "__main__" == __name__:
     data = ExcelDataParser(
         r"D:\CODE\NEW\FileMonitoringSystem-main\Setting\ProjectSettingInfo.xlsx", "ProjectSettingInfo")
-    # print(data.header)
-    # print(data.body)
-    # print(data.dataframe)
     print(list(data.reset_index(data.dataframe, "目的路徑").keys()))
-    # import re
-    # new_data = data.reset_index(data.dataframe, "目的路徑")
-    # files = ["123.zip", "ABC.msg", "ABCD.bat", "1234.zip"]
-    # contensions = new_data["E:\MAIL\Andrew\Auto\安聯人壽－每日補單"]["正式檔下載檔名"]
-    # def is_match_regex_file(file: str, regex_strings: list) -> bool:
-    #     import re
-    #     for regex in regex_strings:
-    #         if re.match(fr"{regex}", file):
-    #             return True
-    #     return False
-    
-    # print(is_match_regex_file(files[0], contensions))
-    # print(new_data)
-    # # 利用正則表達式篩選出符合的檔案(字串)
-    # contensions = new_data["E:\MAIL\Andrew\Auto\安聯人壽－每日補單"]["正式檔下載檔名"]
-    # matching_files = []
-    # for file in files:
-    #     for contension in contensions:
-    #         if re.match(fr"{contension}", file):
-    #             matching_files.append(file)
-    #             break
+
 
