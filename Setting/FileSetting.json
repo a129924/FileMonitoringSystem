@@ -3,9 +3,9 @@
     "ZipPassword": 89283591,
     "EasyMove": false,
     "CreateFolderByExtension": false,
-    "MoveSameFileByFolder": {
-        "isMove": false,
-        "fileExtension": ""
+    "SpecialType": {
+        "type": "MoveSameFileByFolder",
+        "extension" : "TXT"
     },
     "VbaMainFileInfo": {
         "checkName": {
