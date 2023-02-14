@@ -1,7 +1,7 @@
 import re
 import os 
 from datetime import datetime
-from typing import List
+from typing import Any, List
 
 import time
 # TODO 正則要改成符合符號 ["&", "!", "#", "%", "^", "-", "=",]
@@ -21,21 +21,25 @@ class CheckCommaList(list):
         強制把含有逗號的字串 轉換成list 
         並把LIST中每個字串 轉換成ComplexString型態 
         '''
-        if isinstance(string, str) and self.is_have_comma_string(string):
-            strings = self.have_comma_string_to_list(string)
-            new_strings = []
-            for string in strings:
-                new_strings.append(ComplexString(string).complex_str())
+        if isinstance(string, str):
+            if self.is_have_comma_string(string):
+                strings = self.have_comma_string_to_list(string)
+                new_strings = []
+                for string in strings:
+                    new_strings.append(fr"{ComplexString(string).complex_str()}")
 
-            return new_strings
-        elif isinstance(string, list):
+                return new_strings
+            else:
+                return ComplexString(string).complex_str()
+                
+        elif isinstance(string, list) and isinstance(string[0], str):
             new_strings = []
-            for str_ in string:
-                new_strings.append(ComplexString(str_).complex_str())
+            for str_ in string:  # type: ignore
+                new_strings.append(fr"{ComplexString(str_).complex_str()}")
 
-            return new_strings
+            return fr"{new_strings}"
         else:
-            return ComplexString(string).complex_str()
+            return string
 
 class ComplexString(str):
     # def __init__(self, string:str, format_type="str"):
@@ -44,8 +48,11 @@ class ComplexString(str):
         
     #     self.date_format()
     #     self.string = self.regex_format()
-    def __new__(cls, string):
-        return str.__new__(cls, string)
+    def __new__(cls, variable:Any):
+        if isinstance(variable, str):
+            return str.__new__(cls, variable)
+        else:
+            return variable
 
         
     @property
@@ -64,9 +71,9 @@ class ComplexString(str):
     def complex_str(self):
         string = ComplexString(self.regex_format()).date_format()
 
-        return string
+        return fr"{string}"
    
-    def date_format(self):
+    def date_format(self)->str:
         # 找到<>中的字串
         # 因應json format為str型態 會有多個<MMDD>或者是<HHMMDD> 所以需要改成finall for 逐一取代
         date_formats:List[str] = re.findall(r'<(.*?)>', self)
@@ -112,20 +119,20 @@ if __name__ == "__main__":
     def now():return time.time()
     start = now()
     new_strings: list = CheckCommaList(contension_strings)
-    new_string: str = ComplexString(contension_string)  # type: ignore
+    new_string: str = ComplexString(contension_string).complex_str()  # type: ignore
     
-    def is_match_regex_file(file:str, regex_strings:list)->bool:
-        import re
-        for regex in regex_strings:
-            # IAN10208.*\\.zip
-            print(fr"{regex}")
-            if re.match(fr"{regex}", file):
-                return True
-        return False
+    # def is_match_regex_file(file:str, regex_strings:list)->bool:
+    #     import re
+    #     for regex in regex_strings:
+    #         # IAN10208.*\\.zip
+    #         print(fr"{regex}")
+    #         if re.match(fr"{regex}", file):
+    #             return True
+    #     return False
 
-    file = "IAN10208.zip"
+    # file = "IAN10208.zip"
 
-    print(is_match_regex_file("0206每日通知單.zip", [".*\\.zip"]))
+    # print(is_match_regex_file("0206每日通知單.zip", [".*\\.zip"]))
 
     print((now() - start)*1000)
     # print(new_strings)

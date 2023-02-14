@@ -2,7 +2,7 @@ import os
 from openpyxl import load_workbook, Workbook
 
 from regex_converter import CheckCommaList
-from typing import List, Any
+from typing import List, Any, Dict, Set
 
 class ExcelDataParser():
     def __init__(self, file_path: str, sheet_name: str, is_convert = True) -> None:
@@ -52,6 +52,15 @@ class ExcelDataParser():
             reset_index_data[new_index] = row
 
         return reset_index_data
+
+    def find_element_by_position(self, key:str)->Dict[str, Set[Any]]:
+        assert key in self.header
+
+        position = self.header.index(key)
+
+        return {key : {body[position] for body in self.body if body[position] != None}}
+
+
     
     def fillna(self, index, method):
         

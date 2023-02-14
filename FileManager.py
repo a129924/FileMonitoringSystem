@@ -35,7 +35,6 @@ class FileManager():
 
 class FileMoveManager(FileManager):
     def __init__(self,dst_path:str)->None:
-        assert os.path.exists(dst_path), "Folder '%s' not exists" % dst_path
         self.dst_path = dst_path
         
     def move_file(self, src_file_path:str, easy_move:bool = False)->tuple:
@@ -67,20 +66,13 @@ class FileMoveManager(FileManager):
                 pass
         return (True, dst_path)
 
-    def copy_file(self, src_path:str, rename:bool= False, new_filename = "")->Tuple[bool, str]:
-        filename = os.path.basename(src_path)
-        if rename:
-            dst_path = os.path.join(self.dst_path, new_filename)
-            print(("dst_path, new_filename: " ,(dst_path, new_filename)))
-        else:
-            dst_path = os.path.join(self.dst_path, filename)
-            print(("dst_path, new_filename: " ,(dst_path, filename)))
+    def copy_file(self, src_path:str)->Tuple[bool, str]:
+        assert os.path.exists(src_path), "Folder '%s' not exists" % src_path
 
+        if not os.path.exists(self.dst_path):
+            shutil.copy2(src_path, self.dst_path)
 
-        if not os.path.exists(dst_path):
-            shutil.copy2(src_path, dst_path)
-
-        return (True, dst_path)
+        return (True, self.dst_path)
 
     def move_files(self, files: list, src_path: str):
         # to_path .\Project\childProject\{today}

@@ -5,11 +5,11 @@ from watchdog.events import FileSystemEventHandler
 import os, time
 import argparse
 
-from typing import Tuple
+from typing import Dict, Tuple
 
 from ExcelDataParser import ExcelDataParser
 from FileManager import FileMoveManager
-from ProjectInfo import ProjectFileInfo
+from ProjectInfo import ProjectFileInfo, ProjectSpecialTypeData
 from ZipUtility import ZipExtrator, ZipUtility
 from threading import Thread
 import queue
@@ -113,7 +113,8 @@ class FileEventHandler(FileSystemEventHandler):
                         dst_path = fr"{dst_path}"
                         # src_path, dst_path, filename : ('E:\\MAIL\\Andrew\\Auto\\安聯人壽－每日補單\\安聯每日測試資料夾2\\安聯每日測試.msg', 'E:\\DATA\\IAN\\IAN1\\0206TST', '安聯每日測試.msg')
                         # src_path, dst_path, filename : ('E:\\MAIL\\Andrew\\Auto\\安聯人壽－每日補單\\安聯每日測試.msg', 'E:\\DATA\\IAN\\IAN1\\0206TST', '安聯每日測試.msg')
-                        MOVE_FILE_QUEUE.put([event.src_path, dst_path, filename])
+                        if "@SynoEAStream" not in filename:
+                            MOVE_FILE_QUEUE.put([event.src_path, dst_path, filename])
 
                     else:
                         print(f"match field file: {os.path.basename(event.src_path)}")
@@ -153,27 +154,24 @@ def move_file(src_path: str, dst_path: str, easy_move:bool=False)->tuple:
     print("移動完畢")
     return FileMoveManager(dst_path).move_file(fr"{src_path}", easy_move = easy_move)
 
-def copy_file(src_path:str, dst_path:str, rename:bool, new_filename:str) -> Tuple[bool, str]:
-    return FileMoveManager(dst_path).copy_file(src_path, rename, new_filename)
+def copy_file(src_path:str, dst_path:str) -> Tuple[bool, str]:
+    return FileMoveManager(dst_path).copy_file(src_path)
 
-def unzip(dst_path: str, filename: str, password, create_folder_by_extension:bool, move_no_same_filename_by_folder:dict):
+def unzip(dst_path: str, filename: str, password, create_folder_by_extension:bool, special_type:dict):
     ZipExtrator(
         zip_file=os.path.join(dst_path,filename),
         password=password,
-        to_path=dst_path).unzip(create_folder_by_extension, move_no_same_filename_by_folder)
+        to_path=dst_path).unzip(create_folder_by_extension, special_type)
 
 def get_project_setting_info(filepath:str)->ProjectFileInfo:
     return ProjectFileInfo(filepath)
 
-def have_XXXX(string:str,target:str)->str:
-    if "╳╳╳╳" in string:
-        return string.replace("╳╳╳╳", target)
-    elif "XXXX" in string:
-        return string.replace("XXXX", target)
-    elif "mmdd" in string:
-        return string.replace("mmdd", target)
+def get_project_special_type(filepath:str)->Dict[str, str]:
 
-    return string
+    if os.path.exists(filepath):
+        return ProjectSpecialTypeData(filepath).json_data
+
+    return {"type":""}
 
 def print_thread_id(move_files:list):
     print('thread id:', threading.get_ident())
@@ -185,7 +183,9 @@ def print_thread_id(move_files:list):
     print(f"src_path, dst_path, filename : {(src_path, dst_path, filename)}")
     print(f"project_setting_path : {project_setting_path}")
 
-    json_data = get_project_setting_info(os.path.join(project_setting_path, "FileSetting.json"))
+    json_path = os.path.join(project_setting_path, "Setting", "ProjectSetting.json")
+    json_data = get_project_setting_info(json_path)
+    special_setting_data = get_project_special_type(os.path.join(project_setting_path, "Setting", "SpecialType.json"))
     
     if os.path.exists(dst_path) is False:
         os.mkdir(dst_path)
@@ -198,27 +198,18 @@ def print_thread_id(move_files:list):
         filename, 
         password=str(json_data.zip_password), 
         create_folder_by_extension=json_data.create_folder_by_extension,
-        move_no_same_filename_by_folder=json_data.move_same_filename_by_folder)
+        special_type=special_setting_data)
     
     vba_main_file_info = json_data.vba_main_file_info
-    src_vba_filename:str = vba_main_file_info["filePath"]  # type: ignore
-    is_check_name = vba_main_file_info["checkName"]["type"]  # type: ignore
-
-
-
-    if not os.path.exists(os.path.join(dst_path, os.path.basename(src_vba_filename))):
-        copy_to_path:str = vba_main_file_info["toPath"]   # type: ignore
-        if is_check_name:
-            new_filename = os.path.join(copy_to_path, os.path.basename(have_XXXX(src_vba_filename, vba_main_file_info["checkName"]["target"])))  # type: ignore
-            is_copy, vba_file =  copy_file(src_vba_filename, copy_to_path, rename=True, new_filename=new_filename)  # type: ignore
-        else:
-            is_copy, vba_file =  copy_file(src_vba_filename, copy_to_path, rename=False, new_filename="")  # type: ignore
+    src_vba_fullpath:str = vba_main_file_info["filePath"]
+    dst_vba_fullpath:str = vba_main_file_info["toPath"]
+    
+    if not os.path.exists(dst_vba_fullpath):
+        is_copy, vba_file =  copy_file(src_vba_fullpath, dst_vba_fullpath)
 
         if is_copy:
             os.startfile(fr"{dst_path}")
             os.startfile(fr"{vba_file}")
-
-
 
     print("done")
 
